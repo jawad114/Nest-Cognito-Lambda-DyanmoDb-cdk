@@ -19,7 +19,7 @@
         "notificationArns": [],
         "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-${AWS::Region}",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-${AWS::Region}",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/535a84b429811806034c5cb0b598ceff6365c9f40b8dd3d4d61abe0c77b3eaef.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/9bd279f14221f3beea3de91af349e51a47d6731dcf979cf2596d8f3241c534b4.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -41,6 +41,20 @@
             "data": "UserPool6BA7E5F2"
           }
         ],
+        "/CdkStack/EventTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "EventTable3F3CD4B2"
+            }
+          }
+        ],
+        "/CdkStack/EventTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EventTable3F3CD4B2"
+          }
+        ],
         "/CdkStack/NestJsFunction/ServiceRole/Resource": [
           {
             "type": "aws:cdk:logicalId",
@@ -59,6 +73,24 @@
             "data": "NestJsFunction5ABADF6F"
           }
         ],
+        "/CdkStack/EventHandlerFunction/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EventHandlerFunctionServiceRole2A498B8A"
+          }
+        ],
+        "/CdkStack/EventHandlerFunction/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EventHandlerFunctionServiceRoleDefaultPolicyC33C38C6"
+          }
+        ],
+        "/CdkStack/EventHandlerFunction/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EventHandlerFunction7EA7E36B"
+          }
+        ],
         "/CdkStack/NestJsApi/Resource": [
           {
             "type": "aws:cdk:logicalId",
@@ -68,7 +100,7 @@
         "/CdkStack/NestJsApi/Deployment/Resource": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "NestJsApiDeployment210C099F667f15fccd9828e61a6ee3c680ad133d"
+            "data": "NestJsApiDeployment210C099F0f27557e3d10fbf700bc314671f79abc"
           }
         ],
         "/CdkStack/NestJsApi/DeploymentStage.prod/Resource": [
@@ -131,10 +163,58 @@
             "data": "NestJsApilambdaGET10098793"
           }
         ],
+        "/CdkStack/NestJsApi/Default/events/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NestJsApievents544794A7"
+          }
+        ],
+        "/CdkStack/NestJsApi/Default/events/POST/ApiPermission.CdkStackNestJsApi48AB8ACF.POST..events": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NestJsApieventsPOSTApiPermissionCdkStackNestJsApi48AB8ACFPOSTeventsA754D949"
+          }
+        ],
+        "/CdkStack/NestJsApi/Default/events/POST/ApiPermission.Test.CdkStackNestJsApi48AB8ACF.POST..events": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NestJsApieventsPOSTApiPermissionTestCdkStackNestJsApi48AB8ACFPOSTevents1550928C"
+          }
+        ],
+        "/CdkStack/NestJsApi/Default/events/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NestJsApieventsPOST01FAA262"
+          }
+        ],
+        "/CdkStack/NestJsApi/Default/events/GET/ApiPermission.CdkStackNestJsApi48AB8ACF.GET..events": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NestJsApieventsGETApiPermissionCdkStackNestJsApi48AB8ACFGETeventsC47C4380"
+          }
+        ],
+        "/CdkStack/NestJsApi/Default/events/GET/ApiPermission.Test.CdkStackNestJsApi48AB8ACF.GET..events": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NestJsApieventsGETApiPermissionTestCdkStackNestJsApi48AB8ACFGETevents957B943F"
+          }
+        ],
+        "/CdkStack/NestJsApi/Default/events/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "NestJsApieventsGET18A646B5"
+          }
+        ],
         "/CdkStack/API URL": [
           {
             "type": "aws:cdk:logicalId",
             "data": "APIURL"
+          }
+        ],
+        "/CdkStack/Event Table Name": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EventTableName"
           }
         ],
         "/CdkStack/CDKMetadata/Default": [

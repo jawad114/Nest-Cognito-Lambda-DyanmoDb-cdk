@@ -9,7 +9,7 @@ export class JwtAuthGuard implements CanActivate {
 
     constructor(private jwtService: JwtService) {
         this.jwksClient = jwksRsa({
-            jwksUri: `https://cognito-idp.ap-south-1.amazonaws.com/ap-south-1_rpd2q7bWO/.well-known/jwks.json`
+            jwksUri: `https://cognito-idp.ap-south-1.amazonaws.com/ap-south-1_qWpkHc1xe/.well-known/jwks.json`
         });
     }
 
@@ -36,7 +36,7 @@ export class JwtAuthGuard implements CanActivate {
   
             const user = jwt.verify(token, signingKey, {
                 algorithms: ['RS256'], 
-                issuer: `https://cognito-idp.ap-south-1.amazonaws.com/ap-south-1_rpd2q7bWO` 
+                issuer: `https://cognito-idp.ap-south-1.amazonaws.com/ap-south-1_qWpkHc1xe` 
             });
 
             req.user = user; 

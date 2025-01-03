@@ -8,6 +8,14 @@
         "id": "CdkStack",
         "path": "CdkStack",
         "children": {
+          "NestJsRepo": {
+            "id": "NestJsRepo",
+            "path": "CdkStack/NestJsRepo",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.aws_ecr.RepositoryBase",
+              "version": "2.164.1"
+            }
+          },
           "UserPool": {
             "id": "UserPool",
             "path": "CdkStack/UserPool",
@@ -59,6 +67,54 @@
             },
             "constructInfo": {
               "fqn": "aws-cdk-lib.aws_cognito.UserPool",
+              "version": "2.164.1"
+            }
+          },
+          "EventTable": {
+            "id": "EventTable",
+            "path": "CdkStack/EventTable",
+            "children": {
+              "Resource": {
+                "id": "Resource",
+                "path": "CdkStack/EventTable/Resource",
+                "attributes": {
+                  "aws:cdk:cloudformation:type": "AWS::DynamoDB::Table",
+                  "aws:cdk:cloudformation:props": {
+                    "attributeDefinitions": [
+                      {
+                        "attributeName": "id",
+                        "attributeType": "S"
+                      }
+                    ],
+                    "keySchema": [
+                      {
+                        "attributeName": "id",
+                        "keyType": "HASH"
+                      }
+                    ],
+                    "provisionedThroughput": {
+                      "readCapacityUnits": 5,
+                      "writeCapacityUnits": 5
+                    },
+                    "tableName": "Events"
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_dynamodb.CfnTable",
+                  "version": "2.164.1"
+                }
+              },
+              "ScalingRole": {
+                "id": "ScalingRole",
+                "path": "CdkStack/EventTable/ScalingRole",
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.Resource",
+                  "version": "2.164.1"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.aws_dynamodb.Table",
               "version": "2.164.1"
             }
           },
@@ -209,7 +265,7 @@
                       "s3Bucket": {
                         "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
                       },
-                      "s3Key": "65aa92adb96e6871d0796f18b3e4f5067f932225b0c60f2bad4e16eea5f5a439.zip"
+                      "s3Key": "fe36ce4d24bd831c5bedcfa76f55dfae4b7f94013e0ba721f4eebd37a4a96290.zip"
                     },
                     "environment": {
                       "variables": {
@@ -219,10 +275,200 @@
                         }
                       }
                     },
-                    "handler": "main.handler",
+                    "handler": "./dist/src/lambda.handler",
                     "role": {
                       "Fn::GetAtt": [
                         "NestJsFunctionServiceRole6C4A4759",
+                        "Arn"
+                      ]
+                    },
+                    "runtime": "nodejs18.x"
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_lambda.CfnFunction",
+                  "version": "2.164.1"
+                }
+              }
+            },
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.aws_lambda.Function",
+              "version": "2.164.1"
+            }
+          },
+          "EventHandlerFunction": {
+            "id": "EventHandlerFunction",
+            "path": "CdkStack/EventHandlerFunction",
+            "children": {
+              "ServiceRole": {
+                "id": "ServiceRole",
+                "path": "CdkStack/EventHandlerFunction/ServiceRole",
+                "children": {
+                  "ImportServiceRole": {
+                    "id": "ImportServiceRole",
+                    "path": "CdkStack/EventHandlerFunction/ServiceRole/ImportServiceRole",
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.Resource",
+                      "version": "2.164.1"
+                    }
+                  },
+                  "Resource": {
+                    "id": "Resource",
+                    "path": "CdkStack/EventHandlerFunction/ServiceRole/Resource",
+                    "attributes": {
+                      "aws:cdk:cloudformation:type": "AWS::IAM::Role",
+                      "aws:cdk:cloudformation:props": {
+                        "assumeRolePolicyDocument": {
+                          "Statement": [
+                            {
+                              "Action": "sts:AssumeRole",
+                              "Effect": "Allow",
+                              "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                              }
+                            }
+                          ],
+                          "Version": "2012-10-17"
+                        },
+                        "managedPolicyArns": [
+                          {
+                            "Fn::Join": [
+                              "",
+                              [
+                                "arn:",
+                                {
+                                  "Ref": "AWS::Partition"
+                                },
+                                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_iam.CfnRole",
+                      "version": "2.164.1"
+                    }
+                  },
+                  "DefaultPolicy": {
+                    "id": "DefaultPolicy",
+                    "path": "CdkStack/EventHandlerFunction/ServiceRole/DefaultPolicy",
+                    "children": {
+                      "Resource": {
+                        "id": "Resource",
+                        "path": "CdkStack/EventHandlerFunction/ServiceRole/DefaultPolicy/Resource",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::IAM::Policy",
+                          "aws:cdk:cloudformation:props": {
+                            "policyDocument": {
+                              "Statement": [
+                                {
+                                  "Action": "cognito-idp:GetUser",
+                                  "Effect": "Allow",
+                                  "Resource": {
+                                    "Fn::GetAtt": [
+                                      "UserPool6BA7E5F2",
+                                      "Arn"
+                                    ]
+                                  }
+                                },
+                                {
+                                  "Action": [
+                                    "dynamodb:DeleteItem",
+                                    "dynamodb:GetItem",
+                                    "dynamodb:PutItem",
+                                    "dynamodb:Scan",
+                                    "dynamodb:UpdateItem"
+                                  ],
+                                  "Effect": "Allow",
+                                  "Resource": {
+                                    "Fn::GetAtt": [
+                                      "EventTable3F3CD4B2",
+                                      "Arn"
+                                    ]
+                                  }
+                                }
+                              ],
+                              "Version": "2012-10-17"
+                            },
+                            "policyName": "EventHandlerFunctionServiceRoleDefaultPolicyC33C38C6",
+                            "roles": [
+                              {
+                                "Ref": "EventHandlerFunctionServiceRole2A498B8A"
+                              }
+                            ]
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_iam.CfnPolicy",
+                          "version": "2.164.1"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_iam.Policy",
+                      "version": "2.164.1"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_iam.Role",
+                  "version": "2.164.1"
+                }
+              },
+              "Code": {
+                "id": "Code",
+                "path": "CdkStack/EventHandlerFunction/Code",
+                "children": {
+                  "Stage": {
+                    "id": "Stage",
+                    "path": "CdkStack/EventHandlerFunction/Code/Stage",
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.AssetStaging",
+                      "version": "2.164.1"
+                    }
+                  },
+                  "AssetBucket": {
+                    "id": "AssetBucket",
+                    "path": "CdkStack/EventHandlerFunction/Code/AssetBucket",
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_s3.BucketBase",
+                      "version": "2.164.1"
+                    }
+                  }
+                },
+                "constructInfo": {
+                  "fqn": "aws-cdk-lib.aws_s3_assets.Asset",
+                  "version": "2.164.1"
+                }
+              },
+              "Resource": {
+                "id": "Resource",
+                "path": "CdkStack/EventHandlerFunction/Resource",
+                "attributes": {
+                  "aws:cdk:cloudformation:type": "AWS::Lambda::Function",
+                  "aws:cdk:cloudformation:props": {
+                    "code": {
+                      "s3Bucket": {
+                        "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+                      },
+                      "s3Key": "fe36ce4d24bd831c5bedcfa76f55dfae4b7f94013e0ba721f4eebd37a4a96290.zip"
+                    },
+                    "environment": {
+                      "variables": {
+                        "USER_POOL_ID": {
+                          "Ref": "UserPool6BA7E5F2"
+                        },
+                        "EVENT_TABLE_NAME": {
+                          "Ref": "EventTable3F3CD4B2"
+                        }
+                      }
+                    },
+                    "handler": "./dist/src/lambda.handler",
+                    "role": {
+                      "Fn::GetAtt": [
+                        "EventHandlerFunctionServiceRole2A498B8A",
                         "Arn"
                       ]
                     },
@@ -296,7 +542,7 @@
                       "aws:cdk:cloudformation:type": "AWS::ApiGateway::Stage",
                       "aws:cdk:cloudformation:props": {
                         "deploymentId": {
-                          "Ref": "NestJsApiDeployment210C099F667f15fccd9828e61a6ee3c680ad133d"
+                          "Ref": "NestJsApiDeployment210C099F0f27557e3d10fbf700bc314671f79abc"
                         },
                         "restApiId": {
                           "Ref": "NestJsApi7B2D23CB"
@@ -696,6 +942,343 @@
                       "fqn": "aws-cdk-lib.aws_apigateway.Resource",
                       "version": "2.164.1"
                     }
+                  },
+                  "events": {
+                    "id": "events",
+                    "path": "CdkStack/NestJsApi/Default/events",
+                    "children": {
+                      "Resource": {
+                        "id": "Resource",
+                        "path": "CdkStack/NestJsApi/Default/events/Resource",
+                        "attributes": {
+                          "aws:cdk:cloudformation:type": "AWS::ApiGateway::Resource",
+                          "aws:cdk:cloudformation:props": {
+                            "parentId": {
+                              "Fn::GetAtt": [
+                                "NestJsApi7B2D23CB",
+                                "RootResourceId"
+                              ]
+                            },
+                            "pathPart": "events",
+                            "restApiId": {
+                              "Ref": "NestJsApi7B2D23CB"
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_apigateway.CfnResource",
+                          "version": "2.164.1"
+                        }
+                      },
+                      "POST": {
+                        "id": "POST",
+                        "path": "CdkStack/NestJsApi/Default/events/POST",
+                        "children": {
+                          "ApiPermission.CdkStackNestJsApi48AB8ACF.POST..events": {
+                            "id": "ApiPermission.CdkStackNestJsApi48AB8ACF.POST..events",
+                            "path": "CdkStack/NestJsApi/Default/events/POST/ApiPermission.CdkStackNestJsApi48AB8ACF.POST..events",
+                            "attributes": {
+                              "aws:cdk:cloudformation:type": "AWS::Lambda::Permission",
+                              "aws:cdk:cloudformation:props": {
+                                "action": "lambda:InvokeFunction",
+                                "functionName": {
+                                  "Fn::GetAtt": [
+                                    "EventHandlerFunction7EA7E36B",
+                                    "Arn"
+                                  ]
+                                },
+                                "principal": "apigateway.amazonaws.com",
+                                "sourceArn": {
+                                  "Fn::Join": [
+                                    "",
+                                    [
+                                      "arn:",
+                                      {
+                                        "Ref": "AWS::Partition"
+                                      },
+                                      ":execute-api:",
+                                      {
+                                        "Ref": "AWS::Region"
+                                      },
+                                      ":",
+                                      {
+                                        "Ref": "AWS::AccountId"
+                                      },
+                                      ":",
+                                      {
+                                        "Ref": "NestJsApi7B2D23CB"
+                                      },
+                                      "/",
+                                      {
+                                        "Ref": "NestJsApiDeploymentStageprod9B38D270"
+                                      },
+                                      "/POST/events"
+                                    ]
+                                  ]
+                                }
+                              }
+                            },
+                            "constructInfo": {
+                              "fqn": "aws-cdk-lib.aws_lambda.CfnPermission",
+                              "version": "2.164.1"
+                            }
+                          },
+                          "ApiPermission.Test.CdkStackNestJsApi48AB8ACF.POST..events": {
+                            "id": "ApiPermission.Test.CdkStackNestJsApi48AB8ACF.POST..events",
+                            "path": "CdkStack/NestJsApi/Default/events/POST/ApiPermission.Test.CdkStackNestJsApi48AB8ACF.POST..events",
+                            "attributes": {
+                              "aws:cdk:cloudformation:type": "AWS::Lambda::Permission",
+                              "aws:cdk:cloudformation:props": {
+                                "action": "lambda:InvokeFunction",
+                                "functionName": {
+                                  "Fn::GetAtt": [
+                                    "EventHandlerFunction7EA7E36B",
+                                    "Arn"
+                                  ]
+                                },
+                                "principal": "apigateway.amazonaws.com",
+                                "sourceArn": {
+                                  "Fn::Join": [
+                                    "",
+                                    [
+                                      "arn:",
+                                      {
+                                        "Ref": "AWS::Partition"
+                                      },
+                                      ":execute-api:",
+                                      {
+                                        "Ref": "AWS::Region"
+                                      },
+                                      ":",
+                                      {
+                                        "Ref": "AWS::AccountId"
+                                      },
+                                      ":",
+                                      {
+                                        "Ref": "NestJsApi7B2D23CB"
+                                      },
+                                      "/test-invoke-stage/POST/events"
+                                    ]
+                                  ]
+                                }
+                              }
+                            },
+                            "constructInfo": {
+                              "fqn": "aws-cdk-lib.aws_lambda.CfnPermission",
+                              "version": "2.164.1"
+                            }
+                          },
+                          "Resource": {
+                            "id": "Resource",
+                            "path": "CdkStack/NestJsApi/Default/events/POST/Resource",
+                            "attributes": {
+                              "aws:cdk:cloudformation:type": "AWS::ApiGateway::Method",
+                              "aws:cdk:cloudformation:props": {
+                                "authorizationType": "NONE",
+                                "httpMethod": "POST",
+                                "integration": {
+                                  "type": "AWS_PROXY",
+                                  "uri": {
+                                    "Fn::Join": [
+                                      "",
+                                      [
+                                        "arn:",
+                                        {
+                                          "Ref": "AWS::Partition"
+                                        },
+                                        ":apigateway:",
+                                        {
+                                          "Ref": "AWS::Region"
+                                        },
+                                        ":lambda:path/2015-03-31/functions/",
+                                        {
+                                          "Fn::GetAtt": [
+                                            "EventHandlerFunction7EA7E36B",
+                                            "Arn"
+                                          ]
+                                        },
+                                        "/invocations"
+                                      ]
+                                    ]
+                                  },
+                                  "integrationHttpMethod": "POST"
+                                },
+                                "resourceId": {
+                                  "Ref": "NestJsApievents544794A7"
+                                },
+                                "restApiId": {
+                                  "Ref": "NestJsApi7B2D23CB"
+                                }
+                              }
+                            },
+                            "constructInfo": {
+                              "fqn": "aws-cdk-lib.aws_apigateway.CfnMethod",
+                              "version": "2.164.1"
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_apigateway.Method",
+                          "version": "2.164.1"
+                        }
+                      },
+                      "GET": {
+                        "id": "GET",
+                        "path": "CdkStack/NestJsApi/Default/events/GET",
+                        "children": {
+                          "ApiPermission.CdkStackNestJsApi48AB8ACF.GET..events": {
+                            "id": "ApiPermission.CdkStackNestJsApi48AB8ACF.GET..events",
+                            "path": "CdkStack/NestJsApi/Default/events/GET/ApiPermission.CdkStackNestJsApi48AB8ACF.GET..events",
+                            "attributes": {
+                              "aws:cdk:cloudformation:type": "AWS::Lambda::Permission",
+                              "aws:cdk:cloudformation:props": {
+                                "action": "lambda:InvokeFunction",
+                                "functionName": {
+                                  "Fn::GetAtt": [
+                                    "EventHandlerFunction7EA7E36B",
+                                    "Arn"
+                                  ]
+                                },
+                                "principal": "apigateway.amazonaws.com",
+                                "sourceArn": {
+                                  "Fn::Join": [
+                                    "",
+                                    [
+                                      "arn:",
+                                      {
+                                        "Ref": "AWS::Partition"
+                                      },
+                                      ":execute-api:",
+                                      {
+                                        "Ref": "AWS::Region"
+                                      },
+                                      ":",
+                                      {
+                                        "Ref": "AWS::AccountId"
+                                      },
+                                      ":",
+                                      {
+                                        "Ref": "NestJsApi7B2D23CB"
+                                      },
+                                      "/",
+                                      {
+                                        "Ref": "NestJsApiDeploymentStageprod9B38D270"
+                                      },
+                                      "/GET/events"
+                                    ]
+                                  ]
+                                }
+                              }
+                            },
+                            "constructInfo": {
+                              "fqn": "aws-cdk-lib.aws_lambda.CfnPermission",
+                              "version": "2.164.1"
+                            }
+                          },
+                          "ApiPermission.Test.CdkStackNestJsApi48AB8ACF.GET..events": {
+                            "id": "ApiPermission.Test.CdkStackNestJsApi48AB8ACF.GET..events",
+                            "path": "CdkStack/NestJsApi/Default/events/GET/ApiPermission.Test.CdkStackNestJsApi48AB8ACF.GET..events",
+                            "attributes": {
+                              "aws:cdk:cloudformation:type": "AWS::Lambda::Permission",
+                              "aws:cdk:cloudformation:props": {
+                                "action": "lambda:InvokeFunction",
+                                "functionName": {
+                                  "Fn::GetAtt": [
+                                    "EventHandlerFunction7EA7E36B",
+                                    "Arn"
+                                  ]
+                                },
+                                "principal": "apigateway.amazonaws.com",
+                                "sourceArn": {
+                                  "Fn::Join": [
+                                    "",
+                                    [
+                                      "arn:",
+                                      {
+                                        "Ref": "AWS::Partition"
+                                      },
+                                      ":execute-api:",
+                                      {
+                                        "Ref": "AWS::Region"
+                                      },
+                                      ":",
+                                      {
+                                        "Ref": "AWS::AccountId"
+                                      },
+                                      ":",
+                                      {
+                                        "Ref": "NestJsApi7B2D23CB"
+                                      },
+                                      "/test-invoke-stage/GET/events"
+                                    ]
+                                  ]
+                                }
+                              }
+                            },
+                            "constructInfo": {
+                              "fqn": "aws-cdk-lib.aws_lambda.CfnPermission",
+                              "version": "2.164.1"
+                            }
+                          },
+                          "Resource": {
+                            "id": "Resource",
+                            "path": "CdkStack/NestJsApi/Default/events/GET/Resource",
+                            "attributes": {
+                              "aws:cdk:cloudformation:type": "AWS::ApiGateway::Method",
+                              "aws:cdk:cloudformation:props": {
+                                "authorizationType": "NONE",
+                                "httpMethod": "GET",
+                                "integration": {
+                                  "type": "AWS_PROXY",
+                                  "uri": {
+                                    "Fn::Join": [
+                                      "",
+                                      [
+                                        "arn:",
+                                        {
+                                          "Ref": "AWS::Partition"
+                                        },
+                                        ":apigateway:",
+                                        {
+                                          "Ref": "AWS::Region"
+                                        },
+                                        ":lambda:path/2015-03-31/functions/",
+                                        {
+                                          "Fn::GetAtt": [
+                                            "EventHandlerFunction7EA7E36B",
+                                            "Arn"
+                                          ]
+                                        },
+                                        "/invocations"
+                                      ]
+                                    ]
+                                  },
+                                  "integrationHttpMethod": "POST"
+                                },
+                                "resourceId": {
+                                  "Ref": "NestJsApievents544794A7"
+                                },
+                                "restApiId": {
+                                  "Ref": "NestJsApi7B2D23CB"
+                                }
+                              }
+                            },
+                            "constructInfo": {
+                              "fqn": "aws-cdk-lib.aws_apigateway.CfnMethod",
+                              "version": "2.164.1"
+                            }
+                          }
+                        },
+                        "constructInfo": {
+                          "fqn": "aws-cdk-lib.aws_apigateway.Method",
+                          "version": "2.164.1"
+                        }
+                      }
+                    },
+                    "constructInfo": {
+                      "fqn": "aws-cdk-lib.aws_apigateway.Resource",
+                      "version": "2.164.1"
+                    }
                   }
                 },
                 "constructInfo": {
@@ -712,6 +1295,14 @@
           "API URL": {
             "id": "API URL",
             "path": "CdkStack/API URL",
+            "constructInfo": {
+              "fqn": "aws-cdk-lib.CfnOutput",
+              "version": "2.164.1"
+            }
+          },
+          "Event Table Name": {
+            "id": "Event Table Name",
+            "path": "CdkStack/Event Table Name",
             "constructInfo": {
               "fqn": "aws-cdk-lib.CfnOutput",
               "version": "2.164.1"

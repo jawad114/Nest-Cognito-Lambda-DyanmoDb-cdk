@@ -1,18 +1,33 @@
-import { JWT_SECRET } from './../../src/auth/constants';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import * as dynamodb from 'aws-cdk-lib/aws-dynamodb'; // Import DynamoDB
 import * as path from 'path';
 
 export class CdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // Create a Cognito User Pool
+    const dockerContextPath = path.join(__dirname, '../../test-task');
+    console.log('Using Docker context path:', dockerContextPath);
+
+   
+    const s3Bucket = new s3.Bucket(this, 'MyBucket', {
+      bucketName: 'access-user',
+      removalPolicy: cdk.RemovalPolicy.DESTROY, 
+      autoDeleteObjects: true, 
+    })
+
+    const eventTable = new dynamodb.Table(this, 'EventTable', {
+      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+      tableName: 'Events',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     const userPool = new cognito.UserPool(this, 'UserPool', {
       userPoolName: 'MyUserPool',
       selfSignUpEnabled: true,
@@ -21,104 +36,64 @@ export class CdkStack extends cdk.Stack {
       },
     });
 
-    // Create a DynamoDB table for events
-    const eventTable = new dynamodb.Table(this, 'EventTable', {
-      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
-      tableName: 'Events', // You can customize the table name
-      removalPolicy: cdk.RemovalPolicy.DESTROY, // Use appropriate removal policy
-    });
 
-    // Lambda function for NestJS application
-    const nestJsLambda = new lambda.Function(this, 'NestJsFunction', {
-      runtime: lambda.Runtime.NODEJS_18_X,
-      handler: 'main.handler',
-      code: lambda.Code.fromAsset('./dist'),
+    const nestJsLambda = new lambda.DockerImageFunction(this, 'NestJSLambda', {
+      code: lambda.DockerImageCode.fromImageAsset(dockerContextPath),
+      functionName: 'NestCustomLambdaFunctionName',
+      memorySize: 256,
+      timeout: cdk.Duration.seconds(90),
       environment: {
-        JWT_SECRET: JWT_SECRET,
+        S3_BUCKET_NAME: s3Bucket.bucketName,
+        DYNAMODB_TABLE_NAME: eventTable.tableName,
         USER_POOL_ID: userPool.userPoolId,
       },
     });
 
-    // IAM policy for accessing Cognito
-    const policy = new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        'cognito-idp:ListUsers',
-        'cognito-idp:GetUser',
-        'cognito-idp:AdminGetUser',
-        'cognito-idp:AdminCreateUser',
-        'cognito-idp:AdminDeleteUser',
-      ],
-      resources: [userPool.userPoolArn],
-    });
 
-    nestJsLambda.addToRolePolicy(policy);
+    s3Bucket.grantReadWrite(nestJsLambda);
 
-    // Lambda function for event handling
-    const eventHandlerLambda = new lambda.Function(this, 'EventHandlerFunction', {
-      runtime: lambda.Runtime.NODEJS_18_X,
-      handler: 'event.handler', // Update with your event handling entry point
-      code: lambda.Code.fromAsset('./dist'),
-      environment: {
-        USER_POOL_ID: userPool.userPoolId,
-        EVENT_TABLE_NAME: eventTable.tableName, // Add table name to environment
-      },
-    });
 
-    // IAM policy for the event handler to access Cognito if needed
-    const eventPolicy = new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        'cognito-idp:GetUser', // Add more actions as needed for your event handling
-      ],
-      resources: [userPool.userPoolArn],
-    });
+    eventTable.grantFullAccess(nestJsLambda);
 
-    eventHandlerLambda.addToRolePolicy(eventPolicy);
 
-    // IAM policy for accessing DynamoDB
-    const dbPolicy = new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        'dynamodb:PutItem',
-        'dynamodb:GetItem',
-        'dynamodb:Scan',
-        'dynamodb:UpdateItem',
-        'dynamodb:DeleteItem',
-      ],
-      resources: [eventTable.tableArn],
-    });
+    nestJsLambda.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: [
+          'cognito-idp:ListUsers',
+          'cognito-idp:GetUser',
+          'cognito-idp:AdminCreateUser',
+          'cognito-idp:AdminDeleteUser',
+        ],
+        resources: [userPool.userPoolArn],
+      })
+    );
 
-    eventHandlerLambda.addToRolePolicy(dbPolicy);
-
-    // API Gateway setup
-    const api = new apigateway.LambdaRestApi(this, 'NestJsApi', {
+//proxy
+    const api = new apigateway.LambdaRestApi(this, 'NestApi', {
       handler: nestJsLambda,
-      proxy: false,
+      proxy: true,
     });
-
-    // Auth resource
-    const authResource = api.root.addResource('auth');
-    authResource.addMethod('POST', new apigateway.LambdaIntegration(nestJsLambda));
-
-    // Lambda resource
-    const lambdaResource = api.root.addResource('lambda');
-    lambdaResource.addMethod('GET', new apigateway.LambdaIntegration(nestJsLambda));
-
-    // Event resource
-    const eventResource = api.root.addResource('events');
-    eventResource.addMethod('POST', new apigateway.LambdaIntegration(eventHandlerLambda)); // To create a new event
-    eventResource.addMethod('GET', new apigateway.LambdaIntegration(eventHandlerLambda)); // To list events
 
     // Outputs
-    new cdk.CfnOutput(this, 'API URL', {
+    new cdk.CfnOutput(this, 'ApiEndpoint', {
       value: api.url,
       description: 'The URL of the NestJS API',
     });
 
-    new cdk.CfnOutput(this, 'Event Table Name', {
+    new cdk.CfnOutput(this, 'S3BucketName', {
+      value: s3Bucket.bucketName,
+      description: 'The name of the S3 bucket',
+    });
+
+    new cdk.CfnOutput(this, 'DynamoDBTableName', {
       value: eventTable.tableName,
-      description: 'The name of the DynamoDB Event table',
+      description: 'The name of the DynamoDB table',
+    });
+
+    new cdk.CfnOutput(this, 'UserPoolId', {
+      value: userPool.userPoolId,
+      description: 'The ID of the Cognito User Pool',
     });
   }
 }
